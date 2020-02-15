@@ -50,6 +50,7 @@ class Game extends JFrame{
 		playP.add(gameP, BorderLayout.CENTER);
 		gameP.setFocusable(true);
 		gameP.requestFocusInWindow();
+		gameP.start();
 		gameP.addMouseListener(new MouseAdapter(){
 			public void mouseClicked(MouseEvent e) {
 				if(e.getX() > 150 && e.getX() < 480 && e.getY() > 570 && e.getY()< 670 && gameP.endGame){
@@ -72,14 +73,16 @@ class Game extends JFrame{
 			public void keyPressed(KeyEvent e){
 				 if (e.getKeyCode()==39 && gameP.moveR()){
 				 	gameP.xB++;
-			     }
-    			else if (e.getKeyCode()==37&&gameP.moveL()){
+				 	gameP.repaint();
+			     } else if (e.getKeyCode()==37&&gameP.moveL()){
     				gameP.xB--;
-    			}
-    			else if (e.getKeyChar()==' '){
+				 	gameP.repaint();
+    			} else if (e.getKeyChar()==' '){
     				gameP.changeBlock();
-    			}
-    			else if (e.getKeyCode()==KeyEvent.VK_DOWN){
+    				gameP.repaint();
+    			} else if (e.getKeyCode()==KeyEvent.VK_DOWN){
+ 					gameP.speedVal = 10;
+ 					gameP.timer.setDelay((int)((380 - (int)(2 * gameP.score))/gameP.speedVal));
     				gameP.pushedBlock = gameP.blockNum;
     			}
 			}

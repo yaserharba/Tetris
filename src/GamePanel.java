@@ -134,12 +134,14 @@ class GamePanel extends JPanel{
 	static boolean endGame = false;
 	static boolean playAgain = false;
 	static boolean endSoundDone = false;
+	static boolean fakePaint = false;
+	static boolean timerCall = false;
 	Random rand = new Random();
 	public int score = 0;
 	int firstBlock = pickBlock();
  	int secondBlock = pickBlock();
  	int blockNum = 0;
- 	int pushedBlock = 0;
+ 	int pushedBlock = -1;
  	int speedVal = 1;
  	public float playAgainBrightness = 1.0f;
 	int [] changeToBlock = {0, 2, 3, 4, 1, 6, 7, 8, 5, 10, 9, 12, 11, 14, 15, 16, 13, 18, 17};
@@ -154,19 +156,160 @@ class GamePanel extends JPanel{
  			System.out.println("");
  		}
  	}
+ 	public void drawLines(Graphics g){
+ 		g.setColor(new Color(90, 90, 90));
+ 		for(int i = 1; i <= 9; i++){
+ 			g.drawLine(10 + i * 60, 10, 10 + i * 60, 850);
+ 		}
+ 		for(int i = 1; i <= 13; i++){
+ 			g.drawLine(10, 10 + i * 60, 610, 10 + i * 60);
+ 		}
+ 	}
+ 	public void drawMat(Graphics g){
+ 		g.setColor(new Color(50, 50, 50));
+ 		g.fillRect(10, 10, 600, 840);
+ 		for(int j = 0; j < 14; j ++){
+ 			for(int i = 0; i < 10; i++){
+ 				if(mat[j][i] != 0){
+ 					drawBox(g, 11+60*i, 11+60*j, 60, 5, blockColors[mat[j][i] - 1]);
+ 				}
+ 			}
+ 		}
+ 		drawLines(g);
+ 	}
+ 	public void drawNext(Graphics g){
+ 		g.setColor(Color.WHITE);
+ 		g.setFont(new Font("Monospaced", Font.BOLD, 40));
+ 		g.drawString("Next:", 620, 550);
+ 		if(blockNum%2==0){
+	 		for(int i = 0; i < 4; i++){
+ 				for(int j = 0; j < 4; j++){
+	 				if(Blocks[secondBlock][i][j] != 0){
+	 					drawBox(g, 630+30*j, 600+30*i, 30, 3, blockColors[secondBlock]);
+ 					}
+ 				}
+ 			}
+ 		} else {
+ 			for(int i = 0; i < 4; i++){
+ 				for(int j = 0; j < 4; j++){
+ 					if(Blocks[firstBlock][i][j] != 0){
+ 						drawBox(g, 630+30*j, 600+30*i, 30, 3, blockColors[firstBlock]);
+ 					}
+ 				}
+ 			}
+ 		}
+ 	}
+ 	public void drawScore(Graphics g){
+ 		g.setColor(Color.WHITE);
+ 		g.setFont(new Font("Monospaced", Font.BOLD, 40));
+ 		g.drawString("Best:", 620, 120);
+ 		g.drawString("score:", 620, 170);
+ 		g.drawString(""+bestScore, 640, 220);
+ 		g.drawString("Score:", 620, 350);
+ 		g.drawString(""+score, 640, 400);
+ 	}
+ 	public void stopCheck(){
+ 		for(int i = 0; i < 4; i++){
+ 			for(int j = 0; j < 4; j++){
+ 		   		if(Blocks[block][i][j] != 0){
+ 					if(line + i + 1 > 13){
+ 						stop = true;
+ 						break;
+ 					}else{
+ 						if(mat[line+i+1][xB+j] != 0){
+ 							stop = true;
+ 						}
+ 					}
+ 		   		}
+ 			}
+ 		}
+ 	}
+ 	public void showLoseMessage(Graphics g){
+ 		g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.6f));
+ 		g.fillRoundRect(30, 160, 560, 550, 40, 40);//border of all end game things
+ 		g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.9f));
+ 		g.fillRoundRect(80, 240, 450, 100, 40, 40); //border of End Game
+ 		g.fillRoundRect(90, 428, 200, 60, 40, 40); //border of score
+ 		g.fillRoundRect(320, 428, 200, 60, 40, 40); //border of best
+ 		g.setColor(new Color(1.0f, 1.0f, 1.0f, (playAgainBrightness*0.6f)));
+ 		g.fillRoundRect(150, 570, 330, 100, 40, 40); //border of Play Again
+ 		g.setColor(Color.BLACK);
+ 		g.setFont(new Font("TimesRoman", Font.BOLD, 85)); 
+ 		g.drawString("Game Over", 95, 315);
+ 		g.setFont(new Font("Monospaced", Font.BOLD, 50)); 
+ 		g.drawString("Play Again", 165, 630);
+ 		g.setFont(new Font("Monospaced", Font.BOLD, 30)); 
+ 		g.drawString("Score:", 100, 468);
+ 		g.drawString(""+score, 208, 468);
+ 		g.drawString("Best:", 330, 468);
+ 		g.drawString(""+bestScore, 420, 468);
+ 	}
+ 	public void drawBox(Graphics g, int x, int y, int width, int borderWidth, Color color){
+ 		g.setColor(color);
+		g.fillRect(x, y, width-1, width-1);
+		g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.6f));
+		g.fillPolygon(new int [] {x, x+width-1, x+width-1-borderWidth, x+borderWidth},new int [] {y, y, y+borderWidth, y+borderWidth},4);
+		g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.4f));
+		g.fillPolygon(new int [] {x, x+width-1, x+width-1-borderWidth, x+borderWidth},new int [] {y+width-1, y+width-1, y+width-1-borderWidth, y+width-1-borderWidth},4);
+ 		g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.2f));
+ 		g.fillPolygon(new int [] {x, x, x+borderWidth, x+borderWidth},new int [] {y, y+width-1, y+width-1-borderWidth, y+borderWidth},4);
+ 		g.fillPolygon(new int [] {x+width-1, x+width-1, x+width-1-borderWidth, x+width-1-borderWidth},new int [] {y, y+width-1, y+width-1-borderWidth, y+borderWidth},4);
+ 	}
  	public void drawBlock(Graphics g, int x, int y, int block){
  		for(int i = 0; i < 4; i++){
  			for(int j = 0; j < 4; j++){
  				if(Blocks[block][i][j] != 0){
- 					g.setColor(blockColors[block]);
- 					g.fillRect(11+60*(x+j), 11+60*(y+i),59, 59);
- 					g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.6f));
- 					g.fillPolygon(new int [] {11+60*(x+j), 70+60*(x+j), 65+60*(x+j), 16+60*(x+j)},new int [] {11+60*(y+i), 11+60*(y+i), 16+60*(y+i), 16+60*(y+i)},4);
- 					g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.4f));
- 					g.fillPolygon(new int [] {11+60*(x+j), 70+60*(x+j), 65+60*(x+j), 16+60*(x+j)},new int [] {70+60*(y+i), 70+60*(y+i), 65+60*(y+i), 65+60*(y+i)},4);
- 					g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.2f));
- 					g.fillPolygon(new int [] {11+60*(x+j), 11+60*(x+j), 16+60*(x+j), 16+60*(x+j)},new int [] {11+60*(y+i), 70+60*(y+i), 65+60*(y+i), 16+60*(y+i)},4);
- 					g.fillPolygon(new int [] {70+60*(x+j), 70+60*(x+j), 65+60*(x+j), 65+60*(x+j)},new int [] {11+60*(y+i), 70+60*(y+i), 65+60*(y+i), 16+60*(y+i)},4);
+ 					drawBox(g, 11+60*(x+j), 11+60*(y+i), 60, 5, blockColors[block]);
+ 				}
+ 			}
+ 		}
+ 	}
+ 	public void start(){
+ 		class TimerClass implements  ActionListener{
+ 			public void actionPerformed(ActionEvent e){
+ 				if(e.getSource() == timer){
+ 					erase();
+ 					timerCall = true;
+ 					repaint();
+ 					if(!endGame){
+ 						t++;
+ 					}
+ 				}
+ 			}
+ 		}
+ 		TimerClass TimerOb = new TimerClass();
+ 		timer = new Timer((int)((380 - (int)(2 * score))/speedVal), TimerOb);
+ 		timer.start();
+ 	}
+ 	public void newBlock(){
+ 		if(!endGame){
+ 			block = nextBlock();
+ 			blockNum++;
+ 		}
+ 		line = 0;
+ 		stop = false;
+ 		xB = 4;
+ 	}
+ 	public void format(){
+ 		for(int j = 0; j < 14; j ++){
+ 			for(int i = 0; i < 10; i++){
+ 				mat[j][i] = 0;
+ 			}
+ 		}
+ 		secondBlock = pickBlock();
+ 		t = 0;
+ 		musicStuff.endGame();
+ 		endGame = false;
+ 		endSoundDone = false;
+		score = 0;
+ 		blockNum = 0;
+ 		playAgain = false;
+ 	}
+ 	public void copyToMat(){
+ 		for(int i = 0; i < 4; i++){
+ 			for(int j= 0; j < 4; j++){
+ 				if(Blocks[block][i][j] != 0){
+ 					mat[line+i][xB+j] = Blocks[block][i][j];
  				}
  			}
  		}
@@ -176,174 +319,51 @@ class GamePanel extends JPanel{
  		g.setColor(new Color(70, 70, 70));
  		g.fillRect(10, 10, 760, 840);
  		if(!endGame){
- 			g.setColor(Color.WHITE);
- 			g.setFont(new Font("Monospaced", Font.BOLD, 40));
- 			g.drawString("Best:", 620, 120);
- 			g.drawString("score:", 620, 170);
- 			g.drawString(""+bestScore, 640, 220);
- 			g.drawString("Score:", 620, 350);
- 			g.drawString(""+score, 640, 400);
- 			g.drawString("Next:", 620, 550);
- 			if(blockNum%2==0){
-	 			for(int i = 0; i < 4; i++){
- 					for(int j = 0; j < 4; j++){
-	 					if(Blocks[secondBlock][i][j] != 0){
- 							g.setColor(blockColors[secondBlock]);
- 							g.fillRect(630+30*j, 600+30*i,29, 29);
- 							g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.6f));
- 							g.fillPolygon(new int [] {630+30*j, 659+30*j, 656+30*j, 633+30*j}, new int [] {600+30*i, 600+30*i, 603+30*i, 603+30*i},4);
- 							g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.4f));
- 							g.fillPolygon(new int [] {630+30*j, 659+30*j, 656+30*j, 633+30*j}, new int [] {630+30*i, 630+30*i, 627+30*i, 627+30*i},4);
- 							g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.2f));
- 							g.fillPolygon(new int [] {630+30*j, 630+30*j, 633+30*j, 633+30*j}, new int [] {600+30*i, 630+30*i, 627+30*i, 603+30*i},4);
- 							g.fillPolygon(new int [] {659+30*j, 659+30*j, 656+30*j, 656+30*j},new int [] {600+30*i, 630+30*i, 627+30*i, 603+30*i},4);
- 						}
- 					}
- 				}
- 			} else {
- 				for(int i = 0; i < 4; i++){
- 					for(int j = 0; j < 4; j++){
- 						if(Blocks[firstBlock][i][j] != 0){
- 							g.setColor(blockColors[firstBlock]);
- 							g.fillRect(630+30*j, 600+30*i,29, 29);
- 							g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.6f));
- 							g.fillPolygon(new int [] {630+30*j, 659+30*j, 656+30*j, 633+30*j}, new int [] {600+30*i, 600+30*i, 603+30*i, 603+30*i},4);
- 							g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.4f));
- 							g.fillPolygon(new int [] {630+30*j, 659+30*j, 656+30*j, 633+30*j}, new int [] {630+30*i, 630+30*i, 627+30*i, 627+30*i},4);
- 							g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.2f));
- 							g.fillPolygon(new int [] {630+30*j, 630+30*j, 633+30*j, 633+30*j}, new int [] {600+30*i, 630+30*i, 627+30*i, 603+30*i},4);
- 							g.fillPolygon(new int [] {659+30*j, 659+30*j, 656+30*j, 656+30*j},new int [] {600+30*i, 630+30*i, 627+30*i, 603+30*i},4);
- 						}
- 					}
- 				}
- 			}
+ 			drawScore(g);
+ 			drawNext(g);
  		}
- 		g.setColor(new Color(50, 50, 50));
- 		g.fillRect(10, 10, 600, 840);
- 		for(int j = 0; j < 14; j ++){
- 			for(int i = 0; i < 10; i++){
- 				if(mat[j][i] != 0){
- 					g.setColor(blockColors[mat[j][i] - 1]);
- 					g.fillRect(11+60*i, 11+60*j,59, 59);
- 					g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.6f));
- 					g.fillPolygon(new int [] {11+60*i, 70+60*i, 65+60*i, 16+60*i},new int [] {11+60*j, 11+60*j, 16+60*j, 16+60*j},4);
- 					g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.4f));
- 					g.fillPolygon(new int [] {11+60*i, 70+60*i, 65+60*i, 16+60*i},new int [] {70+60*j, 70+60*j, 65+60*j, 65+60*j},4);
- 					g.setColor(new Color(0.0f, 0.0f, 0.0f, 0.2f));
- 					g.fillPolygon(new int [] {11+60*i, 11+60*i, 16+60*i, 16+60*i},new int [] {11+60*j, 70+60*j, 65+60*j, 16+60*j},4);
- 					g.fillPolygon(new int [] {70+60*i, 70+60*i, 65+60*i, 65+60*i},new int [] {11+60*j, 70+60*j, 65+60*j, 16+60*j},4);
- 				}
- 			}
- 		}
- 		g.setColor(new Color(90, 90, 90));
- 		for(int i = 1; i <= 9; i++){
- 			g.drawLine(10 + i * 60, 10, 10 + i * 60, 850);
- 		}
- 		for(int i = 1; i <= 13; i++){
- 			g.drawLine(10, 10 + i * 60, 610, 10 + i * 60);
- 		}
- 		if(t==0||stop){
- 			if(!endGame){
- 				block = nextBlock();
- 				blockNum++;
- 			}
- 			line = 0;
- 			stop = false;
- 			xB = 4;
- 			loseCheck();
- 		}
- 		for(int i = 0; i < 4; i++){
- 			for(int j = 0; j < 4; j++){
- 		    	if(Blocks[block][i][j] != 0){
- 					if(line + i + 1 >= 14){
- 						stop = true;
- 					}else{
- 						if(mat[line+i+1][xB+j] != 0){
- 							stop = true;
- 						}
- 					}
- 		    	}
- 			}
- 		}
- 		if(stop){
- 			for(int i = 0; i < 4; i++){
- 				for(int j= 0; j < 4; j++){
- 					if(Blocks[block][i][j] != 0){
- 						mat[line+i][xB+j] = Blocks[block][i][j];
- 					}
- 				}
+ 		drawMat(g);
+ 		if(timerCall){
+ 			if(t==0||stop){
+ 				newBlock();
+ 				loseCheck();
  			}
  		}
  		drawBlock(g, xB, line, block);
- 		line++;
- 		class TimerClass implements  ActionListener{
- 			public void actionPerformed(ActionEvent e){
- 				if(e.getSource() == timer){
- 					erase();
- 					repaint();
- 					if(!endGame){
- 						t++;
- 					}
- 				}
+ 		if(timerCall){
+ 			stopCheck();
+ 			if(stop){
+ 				copyToMat();
+ 			} else {
+ 				line++;
  			}
  		}
- 		if(pushedBlock==blockNum){
- 			speedVal = 10;
- 		} else {
+ 		if(pushedBlock!=blockNum||stop){
  			speedVal = 1;
+ 		} else {
+ 			speedVal = 10;
  		}
- 		TimerClass TimerOb = new TimerClass();
- 		timer = new Timer((int)((380 - (int)(0.4 * t))/speedVal), TimerOb);
- 		timer.start();
+ 		timer.setDelay((int)((380 - (int)(2 * score))/speedVal));
  		if(endGame) {
- 			g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.6f));
- 			g.fillRoundRect(30, 160, 560, 550, 40, 40);//border of all end game things
- 			 g.setColor(new Color(1.0f, 1.0f, 1.0f, 0.9f));
- 			g.fillRoundRect(80, 240, 450, 100, 40, 40); //border of End Game
- 			g.fillRoundRect(90, 430, 200, 60, 40, 40); //border of score
- 			g.fillRoundRect(320, 430, 200, 60, 40, 40); //border of best
- 			g.setColor(new Color(1.0f, 1.0f, 1.0f, (playAgainBrightness*0.6f)));
- 			g.fillRoundRect(150, 570, 330, 100, 40, 40); //border od Play Again
- 			g.setColor(Color.BLACK);
- 			g.setFont(new Font("TimesRoman", Font.BOLD, 85)); 
- 			g.drawString("Game Over", 95, 315);
- 			g.setFont(new Font("Monospaced", Font.BOLD, 50)); 
- 			g.drawString("Play Again", 165, 630);
- 			g.setFont(new Font("Monospaced", Font.BOLD, 30)); 
- 			g.drawString("Score:", 100, 468);
- 			g.drawString(""+score, 208, 468);
- 			g.drawString("Best:", 330, 468);
- 			g.drawString(""+bestScore, 420, 468);
+ 			showLoseMessage(g);
  			musicStuff.clip.stop();
  			if(!endSoundDone){
  				musicStuff.playEndMusic();
  				endSoundDone = true;
  			}
  			if(playAgain){
- 				for(int j = 0; j < 14; j ++){
- 					for(int i = 0; i < 10; i++){
- 						mat[j][i] = 0;
- 					}
- 				}
- 				secondBlock = pickBlock();
- 				t = 0;
- 				musicStuff.endGame();
- 				endGame = false;
- 				endSoundDone = false;
-				line = 0;
-				xB = 4;
-				stop = false;
-		    	score = 0;
- 				blockNum = 0;
- 				playAgain = false;
+ 				format();
  			}
+ 		}
+ 		if(timerCall){
+ 			timerCall = false;
  		}
  	} // End paint method
  	public boolean moveR(){
  		for(int i = 0; i < 4; i++){
  			for(int j = 0; j < 4; j++){
  		    	if(Blocks[block][i][j] != 0){
- 					if(xB + j + 1 >= 10){
+ 					if(xB + j > 8 || line+i > 13){
  						return false;
  					}else{
  						if(mat[line+i][xB+j+1] != 0){
@@ -377,16 +397,16 @@ class GamePanel extends JPanel{
 		return pickArray[randShape];
  	}
  	public void erase(){
- 		boolean cleen = true;
+ 		boolean clean = true;
  		int j = 13;
  		for(j = 13; j >= 0; j --){
- 			cleen = true;
+ 			clean = true;
  			for(int i = 0; i < 10; i++){
  				if(mat[j][i]==0){
- 					cleen = false;
+ 					clean = false;
  				}
  			}
- 			if(cleen){
+ 			if(clean){
  				score+=10;
  				if(bestScore < score){
  					bestScore = score;
